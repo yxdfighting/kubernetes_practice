@@ -23,4 +23,42 @@
 
 考虑两个场景实例：
 
-- 一个java web的jar包，想要放在tomcat的webapps目录下运行，一个解决思路是我们把jar包放在tomcat对应路径下，出一个新的镜像，但是这种其实是比较繁琐的，需要重新打包出镜像。另外一个解决思路是在一个pod中运行两个容器，tomcat容器
+- 一个java web的jar包，想要放在tomcat的/webapps目录下运行，一个解决思路是我们把jar包放在tomcat对应路径下，出一个新的镜像，但是这种其实是比较繁琐的，需要重新打包出镜像。另外一个解决思路是在一个pod中运行两个容器，java web容器启动的时候执行一个command，将jar包拷贝到某个路径下；tomcat容器可以从/webapp路径下读取对应的jar包。
+
+  ```yaml
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: javaweb-2
+  spec:
+    initContainers: 
+    - image: geektime/sample:v2
+      name: war
+      command: ["cp", "/sample.war", "/app"] 
+      volumeMounts:
+      - mountPath: /app
+        name: app-volume
+    containers:
+    - image: geektime/tomcat:7.0
+      name: tomcat
+      command: ["sh","-c","/root/apache-tomcat-7.0.42-v2/bin/start.sh"]
+      volumeMounts:
+      - mountPath: /root/apache-tomcat-7.0.42-v2/webapps
+        name: app-volume
+      ports:
+      - containerPort: 8080
+        hostPort: 8001 
+    volumes:
+    - name: app-volume
+      emptyDir: {}
+  
+  ```
+  
+  
+  
+  有几个注意的地方：
+  
+  1. initContainers 定义的是init容器，其按照顺序执行，且执行在container容器前，在其容器启动并且退出后，才会执行container容器
+  2. 我们定义了一个emptyDir的卷，分别将这个卷挂载到两个容器的不同路径下，首先执行initContainer将jar包拷贝到对应路径的卷中；由于同一pod中容器共享volumes 的mount namespace，这样在两个容器中对应路径下看到的卷的内容是相同的
+
+- 
