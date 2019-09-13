@@ -61,4 +61,14 @@
   1. initContainers 定义的是init容器，其按照顺序执行，且执行在container容器前，在其容器启动并且退出后，才会执行container容器
   2. 我们定义了一个emptyDir的卷，分别将这个卷挂载到两个容器的不同路径下，首先执行initContainer将jar包拷贝到对应路径的卷中；由于同一pod中容器共享volumes 的mount namespace，这样在两个容器中对应路径下看到的卷的内容是相同的
 
-- 
+- 容器日志收集
+
+  之前听阿里云分享的时候讲到阿里容器目前的日志采集方案其实是两种方案都存在的，就是Daemonset和sidecar。我们这里主要说sidecar，sidecar日志采集其实就是对每个需要采集日志的应用pod中都同时部署一个日志采集的容器，二者共享mount卷中数据，应用容器将日志写入/var/log，volume挂载到对应容器的/var/log路径，日志采集容器挂载卷到某个路径，同时从该路径定时获取日志写入es。
+
+
+
+​		我们前面说过同一个pod中两个容器共享network命名空间，那么istio其实就是这个方面的应用，todo...
+
+​		
+
+​		
